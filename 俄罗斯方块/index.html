@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body{
+            background-color: lightgreen;
+        }
+        #canvas{
+            margin-left: 220px;
+        }
+        #score{
+            position: relative;
+            font-size: 25px;
+            color: blue;
+            top: -600px;
+        }
+        #hint{
+            position: absolute;
+            font-size: 25px;
+            color: blue;
+            top: 50px;
+        }
+        #canvasTwo{
+            position: absolute;
+            top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="1050" height="595"></canvas>
+    <div id="score">分数: 0</div>
+    <div id="hint">下一块</div>
+    <canvas id="canvasTwo" width="175" height="175"></canvas>
+    <script>
+        var canvas=document.getElementById("canvas");
+        var ctx=canvas.getContext('2d');
+        var block=35;
+        var bgWidth=30;//方块出现的width格数
+        var bgHeight=17;//高度
+        var number;
+        var arrX=[];   //用来存方块的位置
+        var arrY=[];
+        var bottomX=[]; //底部位置
+        var bottomY=[];
+        var temp;      //用来定位到接近中间的位置
+        var grade=0;  //分数
+        var direction=1;        //向上按钮记录
+
+        //下一块
+        var canvasTwo=document.getElementById("canvasTwo");
+        var ctxTwo=canvasTwo.getContext('2d');
+        var blocks=35;
+        var bgWidths=5;//方块出现的width格数
+        var bgHeights=5;//高度
+        var arrXs=[];
+        var arrYs=[];
+        var numbers;
+        var temps;
+
+        function bgColors() {
+            ctxTwo.fillStyle = 'grey';
+            for (var i = 0; i < bgWidths; i++) {
+                for (var j = 0; j < bgHeights; j++) {
+                    ctxTwo.fillRect(i * blocks, j * blocks, blocks, blocks);
+                }
+            }
+        }
+
+
+        //背景颜色
+        function bgColor(){
+            ctx.fillStyle='grey';
+            for(var i=0;i<bgWidth;i++){
+                for(var j=0;j<bgHeight;j++){
+                    ctx.fillRect(i*block,j*block,block,block);
+                }
+            }
+        }
+
+        //初始化方块
+        function initialize(){
+            ctx.fillStyle='white';
+            number=Math.round(Math.random()*4+1); //[1-5]
+            temp=bgWidth/2-1;
+            var storage=window.localStorage;
+            var c=storage.getItem("num");
+            if(c!=null){
+                number=parseInt(c);
+            }
+            switch (number){
+                case 1:   //凸
+                    arrX.push(temp,temp-1,temp,temp+1);
+                    arrY.push(0,1,1,1);
+                    break;
+                case 2:   //----
+                    arrX.push(temp,temp-1,temp+1,temp+2);
+                    arrY.push(0,0,0,0);
+                    break;
+                case 3:   //z
+                    arrX.push(temp,temp-1,temp,temp+1);
+                    arrY.push(0,0,1,1);
+                    break;
+                case 4:  // /___  第三个方块为中心
+                    arrX.push(temp,temp-1,temp-1,temp+1);
+                    arrY.push(1,0,1,1);
+                    break;
+                case 5:  //四方形
+                    arrX.push(temp,temp-1,temp,temp-1);
+                    arrY.push(0,0,1,1);
+                    break;
+            }
+            draw();
+        }
+        //提醒下一块是什么
+        function initializes(){
+            bgColors();
+            ctxTwo.fillStyle='white';
+            temps=2;
+            arrXs.splice(0,arrXs.length);
+            arrYs.splice(0,arrYs.length);
+            numbers=Math.round(Math.random()*4+1);
+            var storage=window.localStorage;
+            storage.setItem("num",numbers);//存入localStorage
+            switch (numbers){
+                case 1:   //凸
+                    arrXs.push(temps,temps-1,temps,temps+1);
+                    arrYs.push(0,1,1,1);
+                    break;
+                case 2:   //----
+                    arrXs.push(temps,temps-1,temps+1,temps+2);
+                    arrYs.push(0,0,0,0);
+                    break;
+                case 3:   //z
+                    arrXs.push(temps,temps-1,temps,temps+1);
+                    arrYs.push(0,0,1,1);
+                    break;
+                case 4:  // /___  第三个方块为中心
+                    arrXs.push(temps,temps-1,temps-1,temps+1);
+                    arrYs.push(1,0,1,1);
+                    break;
+                case 5:  //四方形
+                    arrXs.push(temps,temps-1,temps,temps-1);
+                    arrYs.push(0,0,1,1);
+                    break;
+            }
+            ctxTwo.fillStyle='white';
+            for (var i=0;i<arrXs.length;i++) {
+                ctxTwo.fillRect(arrXs[i]*blocks,arrYs[i]*blocks,blocks-1,blocks-1);
+            }
+        }
+
+        //绘制方块的方法
+        function draw() {
+            ctx.fillStyle='white';
+            for (var i=0;i<arrX.length;i++) {
+                ctx.fillRect(arrX[i]*block,arrY[i]*block,block-1,block-1);
+            }
+        }
+
+        //判断是否到达底部，以及是否发生碰撞
+        function judge() {
+            for(var i=0;i<arrY.length;i++){
+                if(arrY[i]+1==bgHeight){
+                    return false;
+                }
+                if(bottomX!=0){
+                    for(var j=0;j<bottomX.length;j++){
+                        if(arrX[i]==bottomX[j]){    //x轴有重合的地方,才有可能发生碰撞(x轴是向下运行的)
+                            if(arrY[i]+1==bottomY[j]){
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        //下移方法
+        function moveDown(){
+            var flag=true;
+            flag=judge();
+            if(flag==true) {
+                bgColor();
+                for (var i = 0; i < arrY.length; i++) {
+                    arrY[i] = arrY[i] + 1;
+                }
+            }else{//发送碰撞
+                for(var i=0;i<arrX.length;i++){
+                    bottomX.push(arrX[i]);//把原来的信息存到底部
+                    bottomY.push(arrY[i]);
+                }
+                //原来信息清除
+                arrX.splice(0,arrX.length);
+                arrY.splice(0,arrY.length);
+                //重新开始下一块
+                initialize();
+                initializes();
+            }
+            score();
+            draw();
+            drawBottom();//绘制底部
+            gameOver();//判断游戏结束
+        }
+
+        //绘制底部方块
+        function drawBottom(){
+            for(var i=0;i<bottomX.length;i++){
+                ctx.fillStyle='white';
+                ctx.fillRect(bottomX[i]*block,bottomY[i]*block,block-1,block-1);
+            }
+        }
+
+        var game=setInterval(function () {
+            moveDown();
+        },800);
+
+        document.onkeydown=function(e){
+            if(e.keyCode==40){//向下
+                moveDown();
+            }
+            if (e.keyCode==37) {			//方向为左
+                bgColor();//初始化画布,让方块移动后留下黑色背景
+                move(-1);
+                draw(); //每次都赋予样式，让它显示
+            }
+            if (e.keyCode==39) {			//方向为右
+                bgColor();
+                move(1);
+                draw();
+            }
+
+            if(e.keyCode==38){
+                bgColor();
+                transformation(number);//把图形的样式传过去
+                draw();
+            }
+        }
+
+        //方向为上时的变形
+        function transformation(number) {
+            var arrTempX=[];//存放原来的图形
+            var arrTempY=[];
+            for(var i=0;i<arrX.length;i++){	//因为不知道是否能够变形成功，所以先存储起来
+                arrTempX.push(arrX[i]);
+                arrTempY.push(arrY[i]);
+            }
+            direction++;//方块状态改变,共4个方向的切换 每次调用方法让值增加
+            var xTemp=arrX[0];					//将中心坐标提取出来，变形都以当前中心为准
+            var yTemp=arrY[0];
+            arrX.splice(0,arrX.length);			//将数组清空,变形时重新赋值
+            arrY.splice(0,arrY.length);
+            if (number==1) { //1,2,3,4代表默认生成的图形 凸型
+                switch(direction%4){//求余  分4种位置
+                    case 1:
+                        arrX.push(xTemp,xTemp-1,xTemp,xTemp+1);
+                        arrY.push(yTemp,yTemp+1,yTemp+1,yTemp+1);
+                        break;
+                    case 2:
+                        arrX.push(xTemp,xTemp-1,xTemp,xTemp);
+                        arrY.push(yTemp,yTemp,yTemp-1,yTemp+1);
+                        break;
+                    case 3:
+                        arrX.push(xTemp,xTemp-1,xTemp,xTemp+1);
+                        arrY.push(yTemp,yTemp,yTemp+1,yTemp);
+                        break;
+                    case 0:
+                        arrX.push(xTemp,xTemp,xTemp,xTemp+1);
+                        arrY.push(yTemp,yTemp-1,yTemp+1,yTemp);
+                        break;
+                }
+            }
+            if (number==2) {   //----型
+                switch(direction%4){
+                    case 1:
+                        arrX.push(xTemp,xTemp-1,xTemp+1,xTemp+2);
+                        arrY.push(yTemp,yTemp,yTemp,yTemp);
+                        break;
+                    case 2:
+                        arrX.push(xTemp,xTemp,xTemp,xTemp);
+                        arrY.push(yTemp,yTemp-1,yTemp+1,yTemp+2);
+                        break;
+                    case 3:
+                        arrX.push(xTemp,xTemp-1,xTemp+1,xTemp+2);
+                        arrY.push(yTemp,yTemp,yTemp,yTemp);
+                        break;
+                    case 0:
+                        arrX.push(xTemp,xTemp,xTemp,xTemp);
+                        arrY.push(yTemp,yTemp-1,yTemp+1,yTemp+2);
+                        break;
+                }
+            }
+            if (number==3) {   //z型
+                switch(direction%4){
+                    case 1:
+                        arrX.push(xTemp,xTemp-1,xTemp,xTemp+1);
+                        arrY.push(yTemp,yTemp,yTemp+1,yTemp+1);
+                        break;
+                    case 2:
+                        arrX.push(xTemp,xTemp,xTemp+1,xTemp+1);
+                        arrY.push(yTemp,yTemp+1,yTemp,yTemp-1);
+                        break;
+                    case 3:
+                        arrX.push(xTemp,xTemp,xTemp-1,xTemp+1);
+                        arrY.push(yTemp,yTemp-1,yTemp,yTemp-1);
+                        break;
+                    case 0:
+                        arrX.push(xTemp,xTemp,xTemp+1,xTemp+1);
+                        arrY.push(yTemp,yTemp-1,yTemp,yTemp+1);
+                        break;
+                }
+            }
+            if (number==4) { //|___型
+                switch(direction%4){
+                    case 1:
+                        arrX.push(xTemp,xTemp-1,xTemp-1,xTemp+1);
+                        arrY.push(yTemp,yTemp,yTemp-1,yTemp);
+                        break;
+                    case 2:
+                        arrX.push(xTemp,xTemp,xTemp,xTemp-1);
+                        arrY.push(yTemp,yTemp-1,yTemp+1,yTemp+1);
+                        break;
+                    case 3:
+                        arrX.push(xTemp,xTemp-1,xTemp+1,xTemp+1);
+                        arrY.push(yTemp,yTemp,yTemp,yTemp+1);
+                        break;
+                    case 0:
+                        arrX.push(xTemp,xTemp,xTemp,xTemp+1);
+                        arrY.push(yTemp,yTemp-1,yTemp+1,yTemp-1);
+                        break;
+                }
+            }
+
+
+            var mark=0;//判断上方
+            for(var i=0;i<arrX.length;i++){
+                if(arrY[i]==0){
+                    mark=1;
+                }
+            }
+
+            if(!(crashLeftRight(1) && judge()&&crashLeftRight(-1)&&mark==0)||number==5)
+            {//如果为false
+                //如果变形不成功则执行下面代码,把一开始赋值的数组还回去
+                arrX.splice(0,arrX.length);//清空数组
+                arrY.splice(0,arrY.length);
+                for(var i=0;i<arrTempX.length;i++){
+                    arrX.push(arrTempX[i]);
+                    arrY.push(arrTempY[i]);
+                }
+            }
+            drawBottom();//底部方法
+        }
+
+        function crashLeftRight(numTwo) {
+            for(var i=0;i<arrX.length;i++){
+                if(numTwo==-1){//左
+                    if(arrX[i]==0){//如果为0，那么不让它移动
+                        return false;
+                    }
+                }
+                if(numTwo==1){//右
+                    if(arrX[i]+1==bgWidth){//如果超出,不让它移动
+                        return false;
+                    }
+                }
+                //判断方块之间
+                if(bottomX.length!=0){
+                    for(var j=0;j<bottomX.length;j++){
+                        if(arrY[i]==bottomY[j]){
+                            if(arrX[i]+numTwo==bottomX[j]){
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function move(num){
+            if(num==-1){//左
+                var crashLeft=true;
+                crashLeft=crashLeftRight(-1);
+                if(crashLeft==true){
+                    for(var i=0;i<arrX.length;i++){
+                        arrX[i]=arrX[i]-1;
+                    }
+                }
+            }
+            if(num==1){//右
+                var crashRight=true;
+                crashRight=crashLeftRight(1);
+                if(crashRight==true){
+                    for(var i=0;i<arrX.length;i++){
+                        arrX[i]=arrX[i]+1;
+                    }
+                }
+            }
+            drawBottom();
+        }
+
+        //底部满了增加分数，并清除满了的行
+        function score(){
+            //删除底层方块
+            var aboutWidth=[];  //记录width
+            var aboutHeight;    //记录height
+            if (bottomX.length!=0) {
+                for(var j=bgHeight-1;j>=0;j--){//16->0  高度
+                    for(var i=0;i<bottomX.length;i++){
+                        if (bottomY[i]==j) {
+                            aboutWidth.push(i);     //存入长度(包括第几个方块是底部)
+                        }
+                    }
+                    if (aboutWidth.length==bgWidth) {
+                        aboutHeight=j;      //记录相同的行数
+                        break;
+                    }else{
+                        aboutWidth.splice(0,aboutWidth.length);//如果没满，就删除这个数组
+                    }
+                }
+            }
+            if (aboutWidth.length==bgWidth) {
+                //计算成绩grade
+                grade++;
+                document.getElementById('score').innerHTML='分数: '+grade;
+
+                var compare = function (x, y) {//比较函数
+                    if (x < y) {
+                        return -1;
+                    } else if (x > y) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }
+                var arr=aboutWidth.sort(compare);//赋值(排列顺序后的数组)
+                for(var i=arr.length-1;i>=0;i--){//因为下标从0开始，所以长度减-,从后往前遍历
+                    bottomX.splice(arr[i],1);//删除数组
+                    bottomY.splice(arr[i],1);
+                }
+
+                // for(var i=0;i<aboutWidth.length;i++){//i<30
+                //     bottomX.splice(aboutWidth[i]-i,1);//删除满了哪一行,每次删除1个
+                //     // (第1次删除了0位置，1位置就变成0位置，所以再-循环次数，删除变成0位置的1位置)
+                //     bottomY.splice(aboutWidth[i]-i,1);
+                // }
+
+                //让上面的方块往下掉一格
+                for(var i=0;i<bottomX.length;i++){
+                    if (bottomY[i]<aboutHeight) {
+                        bottomY[i]=bottomY[i]+1;
+                    }
+                }
+            }
+        }
+
+        function gameOver(){
+            var mark=0;
+            for(var i=0;i<bottomX.length;i++){
+                if(bottomY[i]==0){
+                    mark=1;
+                    clearInterval(game);
+                }
+            }
+            if(mark==1){
+                alert("游戏结束,总分为:"+grade);
+                localStorage.removeItem("num");//删除localStorage
+                location.reload();
+            }
+        }
+        bgColor();
+        initialize();
+        //提醒的方法
+        bgColors();
+        initializes();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
