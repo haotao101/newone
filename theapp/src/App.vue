@@ -41,12 +41,9 @@ export default {
     };
   },
   created(){
-    this.$http.get('/api/seller').then((response) => {
+    this.$http.get('https://haotao101.github.io/newone/theapp/data.json').then((response) => {
       //数据存在这个路径中(在webpack.dev.conf中定义,通过data.json中的数据定义)
-      response = response.body;
-      if (response.errno === ERR_OK) {
-        this.seller = response.data;
-      }
+        this.seller = response.data.seller;
     });
   },
   mounted(){//颜色控制

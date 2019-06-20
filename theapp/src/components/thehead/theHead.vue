@@ -113,15 +113,12 @@
     },
     created(){
       this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
-      this.$http.get('/api/seller').then((response) => {
+      this.$http.get('https://haotao101.github.io/newone/theapp/data.json').then((response) => {
         //数据存在这个路径中(在webpack.dev.conf中定义,通过data.json中的数据定义)
-        response = response.body;
-        if (response.errno === ERR_OK) {
-          this.seller = response.data;
-          this.note=response.data.avatar;
-          this.first=response.data.supports[0].description;
-          this.len=response.data.supports.length;
-        }
+          this.seller = response.data.seller;
+          this.note=response.data.seller.avatar;
+          this.first=response.data.seller.supports[0].description;
+          this.len=response.data.seller.supports.length;
       });
     }
   }
