@@ -14,7 +14,7 @@
   "dependencies": {
     "better-scroll": "^0.1.7",
     "bootstrap": "^3.3.7",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "less": "^3.8.1",
     "less-loader": "^4.1.0",
     "vue": "^2.5.2",
